@@ -1,0 +1,26 @@
+---
+- name: Create  folders
+  file:
+    path: "/var/log/php"
+    state: directory
+    owner: root
+    group: root
+    mode: 0775
+
+- template:
+    src: templates/99-magento.ini.j2
+    dest: /etc/php/{{ php_version }}/mods-available/99-magento.ini
+
+- file:
+    src: /etc/php/{{ php_version }}/mods-available/99-magento.ini
+    dest: "{{ item }}"
+    state: link
+  with_items:
+    - /etc/php/{{ php_version }}/cli/conf.d/99-magento.ini
+    - /etc/php/{{ php_version }}/fpm/conf.d/99-magento.ini
+  notify: restart PHP_FPM
+
+- template:
+    src: templates/php_fpm.j2
+    dest: /etc/php/{{ php_version }}/fpm/pool.d/www.conf
+  notify: restart PHP_FPM

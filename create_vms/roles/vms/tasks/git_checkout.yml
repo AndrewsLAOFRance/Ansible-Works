@@ -1,0 +1,25 @@
+---
+###########################################################################################################
+########## This task to switch the repository branch that will be used for this cluster creation ##########
+###########################################################################################################
+  - name: "Set branch name in GitHub which is used to create VMS"
+    git:
+      repo: "git@github.com:zebratechnologies/RFLX-GCP-FOUNDATIONS.git"
+      dest: "{{ project_path }}"
+      version: "{{ branche_name }}"
+      force: yes
+      accept_hostkey: true
+      clone: no
+
+  - name: "Update localy repository is up to date"
+    git:
+      repo : "git@github.com:zebratechnologies/RFLX-GCP-FOUNDATIONS.git"
+      dest: "{{ project_path }}"
+      version: "{{ branche_name }}"
+      force: yes
+      accept_hostkey: true
+      clone: no
+      update: yes
+
+
+

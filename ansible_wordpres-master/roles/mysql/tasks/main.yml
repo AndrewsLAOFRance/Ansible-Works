@@ -1,0 +1,53 @@
+---
+- name: Install MySQL server
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+   - mysql-client
+   - mysql-common
+   - mysql-server
+   - python-mysqldb
+
+- name: Start MySQL service
+  service:
+    name: mysql
+    state: started 
+    enabled: yes
+
+- name: Create .my.cnf file with root password credentials
+  become: yes
+  template: 
+    src: .my.cnf.j2 
+    dest: /root/.my.cnf 
+    mode: 0600
+  notify:
+  - Restart mysql
+
+#- name: Update MySQL root password for root account
+#  become: yes
+#  mysql_user: 
+#    login_user: root
+#    login_password: ''
+#    name: root
+#    host: localhost
+#    password: "{{ db_root_password }}"
+#    priv: '*.*:ALL,GRANT'
+
+- name: Create a database
+  mysql_db: 
+#    login_user: root
+#    login_password: "{{ db_root_password }}"
+    name: "{{ db_name }}"
+    collation: utf8_general_ci
+    encoding: utf8
+    state: present
+
+
+- name: Create a database user
+  mysql_user: 
+    name: "{{ db_user }}"
+    password: "{{ db_user_password }}"
+    priv: '{{ db_name }}.*:ALL'
+    state: present
+    host: localhost

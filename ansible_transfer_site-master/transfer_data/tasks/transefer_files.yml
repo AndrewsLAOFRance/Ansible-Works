@@ -1,0 +1,25 @@
+---
+# tasks file for transfe web site dir
+- name: Copy ssh key to server
+  copy:
+    src: "{{ ssh_key_src_path }}"
+    dest: "{{ ssh_key_dest_path }}"
+    owner: "{{ owner }}"
+    mode: 0400
+  delegate_to: new_server
+
+- name: Transfer file from old server to new
+  synchronize:
+    src: "{{ old_server_src }}"
+    dest: "{{ new_server_dest }}"
+    mode: pull
+    archive: no
+    copy_links: yes
+    recursive: yes
+    # private_key: "{{ ssh_key_src_path }}"
+  delegate_to: new_server
+  register: transfer_result
+
+- name: Print transfer result
+  debug:
+    msg: "{{ transfer_result.stdout_lines }}"

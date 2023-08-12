@@ -1,0 +1,9 @@
+# vars file for install_mysql_server
+---
+mysql_packeg: 
+   - mysql-client
+   - mysql-common
+   - mysql-server
+   - python-mysqldb
+
+db_root_password: ''

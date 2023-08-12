@@ -1,0 +1,19 @@
+# tasks file for install_mysql_server
+---
+    - name: update instances
+      apt:
+        update_cache: yes
+
+    - name: Install mysql server and client to all servers
+      apt:
+        name: "{{ mysql_packeg }}"
+      notify: enable and start mysql-server
+
+    - name: Create .my.cnf file with root password credentials
+      become: yes
+      template: 
+        src: .my.cnf.j2 
+        dest: /root/.my.cnf 
+        mode: 0600
+      notify: restart mysql
+    

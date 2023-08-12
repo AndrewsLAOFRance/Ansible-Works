@@ -1,0 +1,10 @@
+---
+- name: Playbook for transfer site
+  hosts: old_server
+  remote_user: ubuntu
+  gather_facts: true
+
+  roles:
+    
+      - role: transfer_data
+        tags: transfer_data

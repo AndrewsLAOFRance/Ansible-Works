@@ -1,0 +1,19 @@
+---
+- hosts: all
+  gather_facts: true
+  become: yes
+  
+  roles:
+
+    - role: pre_install
+      tags: installs all packeges on all intsances
+
+    - role: install_mysql_server
+      tags: install mysq-server and client to all instances
+
+    - role: mysql_server_master
+      tags: configure mysql server master
+    
+    - role: mysql_server_slaves
+      tags: configure mysql slaves
+

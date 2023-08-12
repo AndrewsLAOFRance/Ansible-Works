@@ -1,0 +1,82 @@
+---
+###############################################################################
+########## The main file that gets custom variables from input files ##########
+###############################################################################
+servers_name: "{{ vms_server }}"
+servers_types: "{{ vms_types }}"
+server_type_name: "{{ servers_name }}_{{ servers_types }}"
+
+components_list:
+   kernel_app: "kla"
+   kernel_web: "klw"
+   rtm_apc: "apc"
+   rtm_app: "was"
+   rtm_db: "dbm"
+   rtm_web": "web"
+   rtm_nty": "nty"
+   rtm_apt": "apt"
+
+
+###############################################################################
+##########                      Conditionals                         ##########
+
+########## Enviroment state
+env_state: "{{ (env == 'pp') | ternary('pp', 'pr') }}"
+env_prefix: "{{ (env == 'pp') | ternary('pp', 'p') }}"
+project_tier_labels: "{{ (env == 'pp') | ternary('pre-production', 'production') }}"
+
+########## Loacations
+locations: "{{ (location == 'us') | ternary('united-states', 'united-kingdom') }}"
+
+########## Components by vm name and types
+component: "{{ (vm_name_type in components_list) | ternary ((components_list[vm_name_type]), false) }}"
+
+###############################################################################
+##########                       Common path                         ##########
+
+project_path: "/home/alevk/Project/RFLX-GCP-FOUNDATIONS"
+newtor_dir: "{{ location }}-network-{{ env_prefix }}"
+network_path: "{{ project_path }}/reflexis/{{ location }}/prod/network/{{ newtor_dir }}components/vpc/terraform.tfvars"
+
+
+###############################################################################
+##########                       Source path                         ##########
+
+scr_path_to_vms: "{{ project_path }}/reflexis/{{ locations }}/prod/compute/{{ src_dir_name }}/components/vms"
+src_path_to_server_type: "{{ scr_path_to_vms }}/{{ servers_name }}"
+
+###############################################################################
+##########                    Destination path                       ##########
+cluster_dirname: "{{ cluster_id }}-{{ env_prefix }}"
+
+# dest_path_to_vms_dir: "{{ project_path }}/reflexis/{{ locations }}/prod/compute/{{ cluster_dirname }}/components/vms"
+# dst_path_to_vm_name: "{{ dest_path_to_vms_dir }}{{ vms_name }}"
+# dst_path_to_end_dir: "{{ dst_path_to_vm }}/{{ vms_name }}/{{ vms_type }}"
+
+########## Tests path to my home dir
+dest_path_to_vms_dir: "/home/alevk/ansible_works/vms"
+dst_path_to_vm_name: "{{ dest_path_to_vms_dir }}/{{ vms_name }}"
+dest_path_to_server_type: "{{ dst_path_to_vm_name }}/{{ vms_type }}"
+
+###############################################################################
+##########                      Calculate IP's                       ##########
+########## For start
+kla_ip: "{{ ip_address }}"
+klw_ip: "{{ (((kla_ip | ipaddr('int')) + (kernel.app_vm.count)) | ipaddr) }}"
+########## For Kernel VM's
+apc_ip: "{{ (((klw_ip | ipaddr('int')) + (kernel.web_vms.count)) | ipaddr) }}"
+
+########## For RTM VM's
+
+
+########## For RWS VM's
+
+
+###############################################################################
+##########                List of input data files                   ##########
+list_input_data: {
+    "input_data.yml",
+    "kernel.yml",
+    "rtm.yml",
+    "rws.yml"
+}

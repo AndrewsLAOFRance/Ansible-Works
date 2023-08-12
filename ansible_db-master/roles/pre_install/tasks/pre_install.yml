@@ -1,0 +1,16 @@
+# tasks file for pre_install
+---
+    - name: update instances
+      apt:
+        update_cache: yes
+        upgrade: dist
+    
+    - name: install need packeges
+      apt:
+        name: "{{ install_packeges }}"
+        state: latest
+    
+    - name: remove useless packages from the cache
+      apt:
+        autoclean: yes
+    

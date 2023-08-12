@@ -1,0 +1,122 @@
+---
+################################################################################################################
+#############   VM's technical characteristics for RTM Cognos, Application, DB, Web, NTY and/or APT ############
+################################################################################################################
+rtm:
+
+  apc_vms:
+      count: 3
+      cpu: [
+        4,
+        4,
+        4
+      ]
+      ram: [
+        24,
+        24,
+        24
+      ]
+      app_disk_size: [
+        35,
+        35,
+        30
+      ]
+      applogs_disk: [
+        10,
+        10,
+        10
+      ]
+
+  app_vms:
+    count: 12
+    cpu: [
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4
+    ]
+    ram: [
+      12,
+      12,
+      12,
+      12,
+      8,
+      8,
+      12,
+      12,
+      10,
+      10,
+      12,
+      12
+    ]
+    app_disk_size: [
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+    log_disk: [
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10
+    ]
+
+  db_vms:
+      count: 2
+      cpu: [6, 6]
+      ram: [12, 12]
+      db2_disk: [10 ,10]
+      db2failarchlogs_disk: [10, 10]
+      db2inst_disk: [10, 10]
+      database_disk: [591, 591]
+      dbbackups_disk: [99, 99]
+      db_host_alias: ['db2_dbserver_pri', db2_dbserver_sec']
+      compo: ['dbm', 'dbs']
+
+  nty_vms:
+      count: 3
+      cpu: [4, 4, 4]
+      ram: [12, 12, 12]
+      instances_disk: [30, 30, 30]
+      data_disk: [ 20, 20, 20]
+      host_alias: "pulse.instanceServer"
+
+  web_vms:
+    count: 2
+    cpu: [2, 2]
+    ram: [4, 4]
+    app_disk: [30, 30]
+    customers:
+
+  apt_vms:
+      status: "{{ rtm_apt_state }}"
+      count: 2
+      cpu: [2, 4]
+      ram: [10, 12]
+      app_disk_size: 30
+      log_disk: 2

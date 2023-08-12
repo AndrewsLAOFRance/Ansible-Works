@@ -1,0 +1,13 @@
+---
+- name: Create instaces for databases project
+  hosts: localhost
+  gather_facts: false
+  connection: local
+
+  roles:
+
+    - role: security_group
+      tags: create security group
+
+    - role: ec2
+      tags: create ec2 instances

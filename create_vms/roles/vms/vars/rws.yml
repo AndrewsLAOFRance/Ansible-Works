@@ -1,0 +1,8 @@
+---
+#############################################################################################################
+#############          VM's technical characteristics for RWS customers VM types                #############
+#############################################################################################################
+rws_customer_count: "{{ uniq_count_customers_id | count }}"
+rws_uniq_customers_list: "{{ customers | unique }}"
+rws_customers_sort_by_name: "{{ customers | slice((uniq_count_customers_id | count)|int) }}"
+rws_dir_names_by_customer: "{{ uniq_count_customers_id | items2dict(key_name='id', value_name='count') | list }}"

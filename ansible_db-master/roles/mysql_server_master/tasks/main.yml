@@ -1,0 +1,37 @@
+# tasks file for mysql_server_master
+---
+    - name: configure mysql master 
+      block:
+        
+        - name: edit config file for master server
+          replace:
+            path: /etc/mysql/mysql.conf.d/mysqld.cnf
+            regexp: '^(.*)bind-address = 127.0.0.1(.*)$'
+            replace: 'bind-address  =  0.0.0.0'
+    
+        - name: edit config file for master server add to end of file
+          blockinfile:
+            path: /etc/mysql/mysql.conf.d/mysqld.cnf
+            block: |
+              server-id = 1
+              log_bin = /var/log/mysql/mysql-bin.log
+              log_bin_index =/var/log/mysql/mysql-bin.log.index
+              relay_log = /var/log/mysql/mysql-relay-bin
+              relay_log_index = /var/log/mysql/mysql-relay-bin.index
+          notify: restar mysql
+        
+        - name: removes all anonymous user accounts
+          mysql_user:
+            name: ''
+            host_all: yes
+            state: absent
+
+        - name: create user replicaton 
+          mysql_user:
+            name: dbuser
+            password: "{{ db_pass }}"
+            priv: "*.*:REPLICATION CLIENT"
+            state: present
+        
+      #when: inventory_hostname in groups['db_master']
+      when: server_type == 'master'

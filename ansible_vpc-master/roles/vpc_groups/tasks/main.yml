@@ -1,0 +1,7 @@
+# tasks file for vpc_groups
+---
+    - name: Create vpc with subnet for ec2 instances
+      include: vpc.yml
+
+    - name: Create security groups for ec2 instances
+      include: security_group.yml

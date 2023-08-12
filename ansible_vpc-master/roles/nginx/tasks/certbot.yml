@@ -1,0 +1,30 @@
+---
+- name : Install Let's Encrypt Package
+  apt: 
+    name: "{{ certbot_packages }}" 
+    state: latest
+
+- name: Check if certificate already exists.
+  stat:
+    path: /etc/letsencrypt/live/{{ vhost }}/fullchain.pem
+  register: letsencrypt_cert 
+
+- name: Create and Install SSl via {{ certbot_plugin }} Plugin
+  block: 
+    - name: stop nginx
+      systemd:
+        name: nginx
+        state: stopped
+
+    - name: Generete SSL 
+      shell: "certbot --{{ certbot_plugin }} -m {{ certbot_admin_email }} --agree-tos --noninteractive -d {{ vhost }} -d www.{{ vhost }}"
+      args:
+        creates: /etc/letsencrypt/live/{{ vhost }}
+     
+    - name: Set Letsencrypt Cronjob for Certificate Auto Renewal
+      cron: 
+        name: letsencrypt_renewal 
+        special_time: weekly 
+        job: "/usr/bin/certbot renew --quiet"
+      notify: reload nginx
+  when: not letsencrypt_cert.stat.exists

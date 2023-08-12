@@ -1,0 +1,13 @@
+---
+# tasks file for git_clone
+- name: Create release folder
+  file:
+    path: /var/www/{{ vhost }}/current
+    state: directory
+
+- name: Get files from git repository
+  git:
+    repo: https://{{ gitlab_user | urlencode }}:{{ gitlab_password | urlencode }}@gitlab.com/Andreyfr1/{{ gitlab_repo }}.git
+    dest: /var/www/{{ vhost }}/current
+    clone: yes
+    update: yes

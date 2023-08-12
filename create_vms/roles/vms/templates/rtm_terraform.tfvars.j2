@@ -1,0 +1,182 @@
+{% if (servers_name == "rtm") %}
+####################
+# environment inputs
+####################
+
+# specify cluster id
+cluster_id = "{{ cluster }}"
+# specify environment ex: pr, pp, sb
+env      = "{{ env }}"
+location = "{{ short_location }}"
+prefix   = "rfx"
+# specify component ex: klw (kernel web), kla (kernel app), web(RTM Web Servers), was(RTM app Servers), apc(cognos), nty(notification servers), dbm (DB2 primary), dbs (DB2 Secondary)
+component = "{{ component }}"
+
+# Instance values
+# specify serviceaccount email id
+service_account_scopes = ["cloud-platform"]
+startup_script         = ""
+metadata = {
+  startup-script-url = ""
+  class              = "{{ servers_name }}"
+  type               = "{{ server_types }}"
+}
+
+source_image_family  = ""
+source_image_project = "za-global-golden-images-p"
+source_image         = "rfx-gi-rhel79"
+auto_delete          = true
+disk_type            = "pd-ssd"
+tags                 = ["allow-ssh-ingress-from-iap-fw", "nat"]
+{% if (servers_type == "apc") %}
+named_ports = [
+
+]
+{% endif %}
+{% if (servers_type == "web") %}
+named_ports = [
+  {
+    name = "http",
+    port = 8080
+  }
+]
+{% endif %}
+
+common_project_labels = {
+  bu-owner-manager      = "ro4654",
+  bu-owner-technical    = "sb1859",
+  cost-center           = "42739",
+  instance-type         = "compute-engine",
+  security-agent-exempt = "none",
+  tier                  = "{{ project_tier_labels }}",
+  product               = "{{ product }}"
+}
+
+{% set counts_apc = rtm.apc_vms.count %}
+{% if (server_types == 'apc') %}
+{{ servers_name }}_{{ cognos }}_address_ips = {
+{% for counters in range(0, (counts_apc)) %}
+"{{ (((apc_ip | ipaddr('int')) + (counters)) | ipaddr) }}" = {
+{% if ((((rtm.apc_vms.ram[counters])|int/((rtm.apc_vms.cpu[counters])|int))|int()) == ( 4 |int(0))) %}
+    instance_type            = "{{ app_vms_type }}-standard-{{ rtm.apc_vms.cpu[counters] }}-{{ ((rtm.apc_vms.ram[counters]|int)*(1024|int)) }}",
+{% elif ((((rtm.apc_vms.ram[counters])|int/((rtm.apc_vms.cpu[counters])|int))|int()) == ( 8 |int(0))) %}
+    instance_type            = "{{ app_vms_type }}-highmem-{{ rtm.apc_vms.cpu[counters] }}-{{ ((rtm.apc_vms.ram[counters]|int)*(1024|int)) }}",
+{% elif ((((rtm.apc_vms.ram[counters])|int)) == (((rtm.apc_vms.cpu[counters])|int))) %}
+    instance_type            = "{{ app_vms_type }}-highcpu-{{ rtm.apc_vms.cpu[counters] }}-{{ ((rtm.apc_vms.ram[counters]|int)*(1024|int)) }}",
+{% else %}
+    instance_type            = "{{ app_vms_type }}-custom-{{ rtm.apc_vms.cpu[counters] }}-{{ ((rtm.apc_vms.ram[counters]|int)*(1024|int)) }}",
+{% endif %}
+    boot_disk_size_gb        = "51",
+    application_disk_size_gb = "{{ rtm.apc_vms.app_disk_size[counters] }}",
+    applogs_disk_size_gb     = "{{ rtm.apc_vms.applogs_disk[counters] }}",
+    host_alias               = "",
+    customer                 = "{{ rmt_apc_customer[counters] }}",
+    generate_short           = "true"
+  }
+{% endfor %}
+}
+{{ servers_name }}_{{ cognos }}_ilb_ips = {
+  "{{ apc_ip_ilb }}" = {}
+}
+{% endif %}
+
+{% set counts_app = rtm.app_vms.count %}
+{% if (server_types == 'app') %}
+{{ servers_name }}_{{ server_types }}_address_ips = {
+{% for count in range(0, (counts_app)) %}
+  "{{ (((was_ip | ipaddr('int')) + (count + 1)) | ipaddr) }}" = {
+{% if ((((rtm.app_vms.ram[count])|int/((rtm.app_vms.cpu[count])|int))|int()) == ( 4 |int(0))) %}
+    instance_type            = "{{ app_vms_type }}-standard-{{ rtm.app_vms.cpu[count] }}-{{ ((rtm.app_vms.ram[count]|int)*(1024|int)) }}",
+{% elif ((((rtm.app_vms.ram[count])|int/((rtm.app_vms.cpu[count])|int))|int()) == ( 8 |int(0))) %}
+    instance_type            = "{{ app_vms_type }}-highmem-{{ rtm.app_vms.cpu[count] }}-{{ ((rtm.app_vms.ram[count]|int)*(1024|int)) }}",
+{% elif ((((rtm.app_vms.ram[count])|int)) == (((rtm.app_vms.cpu[count])|int))) %}
+    instance_type            = "{{ app_vms_type }}-highcpu-{{ rtm.app_vms.cpu[count] }}-{{ ((rtm.app_vms.ram[count]|int)*(1024|int)) }}",
+{% else %}
+    instance_type            = "{{ app_vms_type }}-custom-{{ rtm.app_vms.cpu[count] }}-{{ ((rtm.app_vms.ram[count]|int)*(1024|int)) }}",
+{% endif %}
+    boot_disk_size_gb        = "51",
+    app_disk_size_gb         = "{{ rtm.app_vms.app_disk_size[count] }}",
+    log_disk_size_gb         = "{{ rtm.app_vms.log_disk[count] }}",
+    host_alias               = "",
+    generate_short           = "true"
+  }
+{% endfor %}
+}
+{% endif %}
+
+{% set counts_db = rtm.db_vms.count %}
+{% if (server_types == 'db') %}
+{% for count in range(0, (counts_db)) %}
+{{ servers_name }}_{{ rtm.db_vms.compo[count] }}_address_ips = {
+  "{{ (((dbm_ip | ipaddr('int')) + (count + 1)) | ipaddr) }}" = {
+{% if ((((rtm.db_vms.ram[count])|int/((rtm.db_vms.cpu[count])|int))|int()) == ( 4 |int(0))) %}
+      instance_type                = "{{ db_vms_type }}-standard-{{ rtm.db_vms.cpu[count] }}-{{ ((rtm.db_vms.ram[count]|int)*(1024|int)) }}",
+{% elif ((((rtm.db_vms.ram[count])|int/((rtm.db_vms.cpu[count])|int))|int()) == ( 8 |int(0))) %}
+        instance_type                = "{{ db_vms_type }}-highmem-{{ rtm.db_vms.cpu[count] }}-{{ ((rtm.db_vms.ram[count]|int)*(1024|int)) }}",
+{% elif ((((rtm.db_vms.ram[count])|int)) == (((rtm.db_vms.cpu[count])|int))) %}
+        instance_type                = "{{ db_vms_type }}-highcpu-{{ rtm.db_vms.cpu[count] }}-{{ ((rtm.db_vms.ram[count]|int)*(1024|int)) }}",
+{% else %}
+       instance_type                = "{{ db_vms_type }}-custom-{{ rtm.db_vms.cpu[count] }}-{{ ((rtm.db_vms.ram[count]|int)*(1024|int)) }}",
+{% endif %}
+      boot_disk_size_gb            = "51",
+      db2_disk_size_gb             = "{{ rtm.db_vms.db2_disk[count] }}"
+      db2failarchlogs_disk_size_gb = "{{ rtm.db_vms.db2failarchlogs_disk[count] }}",
+      db2inst_disk_size_gb         = "{{ rtm.db_vms.db2inst_disk[count] }}",
+      database_disk_size_gb        = "{{ rtm.db_vms.database_disk[count] }}",
+      dbbackups_disk_size_gb       = "{{ rtm.db_vms.dbbackups_disk[count] }}",
+      host_alias                   = "{{ rtm.db_vms.db_host_alias[count] }}"
+}
+}
+{% endfor %}
+{% endif %}
+
+
+{% set counts_web = rtm.web_vms.count %}
+{% if (server_types == 'web') %}
+{{ servers_name }}_{{ server_types }}_address_ips = {
+{% for count in range(0, (counts_web)) %}
+  "{{ (((nty_ip | ipaddr('int')) + (count + 1)) | ipaddr) }}" = {
+{% if ((((rtm.web_vms.ram[count])|int/((rtm.web_vms.cpu[count])|int))|int()) == ( 4 |int(0))) %}
+    instance_type            = "{{ web_vms_type }}-standard-{{ rtm.web_vms.cpu[count] }}-{{ ((rtm.web_vms.ram[count]|int)*(1024|int)) }}",
+{% elif ((((rtm.web_vms.ram[count])|int/((rtm.web_vms.cpu[count])|int))|int()) == ( 8 |int(0))) %}
+    instance_type            = "{{ web_vms_type }}-highmem-{{ rtm.web_vms.cpu[count] }}-{{ ((rtm.web_vms.ram[count]|int)*(1024|int)) }}",
+{% elif ((((rtm.web_vms.ram[count])|int)) == (((rtm.web_vms.cpu[count])|int))) %}
+    instance_type            = "{{ web_vms_type }}-highcpu-{{ rtm.web_vms.cpu[count] }}-{{ ((rtm.web_vms.ram[count]|int)*(1024|int)) }}",
+{% else %}
+    instance_type            = "{{ web_vms_type }}-custom-{{ rtm.web_vms.cpu[count] }}-{{ ((rtm.web_vms.ram[count]|int)*(1024|int)) }}",
+{% endif %}
+    boot_disk_size_gb        = "51",
+    app_disk_size_gb         = "{{ rtm.web_vms.app_disk[count] }}",
+    host_alias               = "",
+    generate_short           = "true"
+  }
+{% endfor %}
+}
+{% endif %}
+
+
+{% set counts_nty = rtm.nty_vms.count %}
+{% if (server_types == 'nty') %}
+{{ server_types }}_address_ips = {
+{% for count in range(0, (counts_nty)) %}
+  "{{ ((( web_ip | ipaddr('int')) + (count)) | ipaddr) }}" = {
+{% if ((((rtm.nty_vms.ram[count])|int/((rtm.nty_vms.cpu[count])|int))|int()) == ( 4 |int(0))) %}
+    instance_type            = "{{ app_vms_type }}-standard-{{ rtm.nty_vms.cpu[count] }}-{{ ((rtm.nty_vms.ram[count]|int)*(1024|int)) }}",
+{% elif ((((rtm.nty_vms.ram[count])|int/((rtm.nty_vms.cpu[count])|int))|int()) == ( 8 |int(0))) %}
+    instance_type            = "{{ app_vms_type }}-highmem-{{ rtm.nty_vms.cpu[count] }}-{{ ((rtm.nty_vms.ram[count]|int)*(1024|int)) }}",
+{% elif ((((rtm.nty_vms.ram[count])|int)) == (((rtm.nty_vms.cpu[count])|int))) %}
+    instance_type            = "{{ app_vms_type }}-highcpu-{{ rtm.nty_vms.cpu[count] }}-{{ ((rtm.nty_vms.ram[count]|int)*(1024|int)) }}",
+{% else %}
+    instance_type            = "{{ app_vms_type }}-custom-{{ rtm.nty_vms.cpu[count] }}-{{ ((rtm.nty_vms.ram[count]|int)*(1024|int)) }}",
+{% endif %}
+    boot_disk_size_gb        = "51",
+    instances_disk_size_gb   = "{{ rtm.nty_vms.instances_disk[count] }}",
+    data_disk_size_gb        = "{{ rtm.nty_vms.data_disk[count] }}",
+    host_alias               = "{{ rtm.nty_vms.host_alias }}{{ count + 1 }}",
+    generate_short           = "true"
+  }
+{% endfor %}
+}
+{% endif %}
+
+{% endif %}

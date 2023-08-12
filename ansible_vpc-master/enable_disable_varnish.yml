@@ -1,0 +1,20 @@
+---
+- hosts: web 
+  remote_user: ubuntu
+  become: yes
+  
+  vars_prompt:
+  - name: "vhost"
+    prompt: "Enter domin name"
+    private: no
+  - name: "varnish_answer"
+    prompt: "Do you want to enable varnish configuration(true/false)?"
+    private: no
+  - name: "htpasswd_answer"
+    prompt: "Do you want to use htpasswd(true/false)?"
+    private: no
+
+  roles:
+
+    - role: enable_disable_varnish
+      tags: enable_disable_varnish_config

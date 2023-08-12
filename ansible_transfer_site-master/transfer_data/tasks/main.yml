@@ -1,0 +1,10 @@
+---
+# tasks file for transfer data
+- name: Create DB dump
+  include: create_db_backup.yml
+
+- name: Transfer file from old server to new server
+  include: transefer_files.yml
+
+- name: Create and restore DB and user
+  include: restore_db.yml

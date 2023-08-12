@@ -1,0 +1,55 @@
+---
+#########################################################################################################
+########## The purpose of this file is to collect complete information about virtual machines, ##########
+##########        such as the number of CPU cores, RAM, disk spaces, cluster-ID, etc.          ##########
+#########################################################################################################
+#############                      Common Variables for VM's                                #############
+#########################################################################################################
+
+#############   Source Directory Name
+src_dir_name: "mwcl52-pp"
+#############
+
+#############   GitHUB
+branche_name: "RGM-636-MWCL52PR_VMS"
+
+#############   VM's
+vms_server: "kernel"
+vms_types: "app"
+
+#############   Other
+cluster_id: "mwcl52"
+env: "pr"
+location: "uk"
+
+rtm_apt_state: true
+customers_state: true
+customers: [
+  "reflexis",
+  "reflexis",
+  "bmr",
+  "bmr",
+  "jlp",
+  "jlp",
+  "coopuk",
+  "coopuk",
+  "dxn",
+  "dxn",
+  "sfc",
+  "sfc"
+]
+
+uniq_count_customers_id:
+    - id: "reflexis"
+      count: 2
+    - id: "bmr"
+      count: 2
+    - id: "jlp"
+      count: 2
+    - id: "coopuk"
+      count: 2
+    - id: "dxn"
+      count: 2
+    - id: "sfc"
+      count: 2
+

@@ -1,0 +1,16 @@
+---
+- name: Check Nginx directory
+  stat:
+    path: /etc/nginx
+  register: nginx_dir
+
+- name: Print if Nginx directory already existed
+  debug:
+    msg: "the nginx directory is already existed"
+  when: nginx_dir.stat.exists
+
+- name: install nginx
+  apt:
+    name: "nginx"
+    update_cache: yes
+  when: nginx_dir.stat.exists == false

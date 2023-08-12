@@ -1,0 +1,11 @@
+# tasks file for ec2
+---
+- name: create master ec2 instances
+  include: ec2_master.yml
+
+- name: create ec2 clusters first instances
+  include: ec2_cluster.yml
+
+- name: create ec2 clusters second instances
+  include: ec2_cluster2.yml
+  

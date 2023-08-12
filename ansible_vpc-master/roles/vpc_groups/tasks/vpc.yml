@@ -1,0 +1,54 @@
+# tasks file for create vpc_subnets
+---
+    - name: Create vpc
+      ec2_vpc_net:
+        state: present
+        name: "{{ vpc_name }}"
+        cidr_block: "{{ vpc_cidr_block }}"
+        region: "{{ region }}"
+        tags:
+          Name: "{{ vpc_name }}"
+          Type: "{{ vpc_name }}"
+      register: create_vpc
+
+    - name: Get vpc id 
+      set_fact:
+        vpc_id: "{{ create_vpc.vpc.id }}"
+
+    - name: Create VPC subnet
+      ec2_vpc_subnet:
+        vpc_id: "{{ vpc_id }}"
+        cidr: 172.31.1.0/24
+        az: "{{ region }}e"
+        map_public: yes
+        tags:
+          Name: "{{ vpc_name }}_subnet"
+          Type: "{{ vpc_name }}_subnet"
+        region: "{{ region }}"
+      register: create_vpc_subnets
+
+    - name: Get vpc subnet id
+      set_fact:
+        vpc_subnet_id: "{{ create_vpc_subnets.subnet.id }}"
+
+    - name: Create IGW
+      ec2_vpc_igw:
+        vpc_id: "{{ vpc_id }}"
+        region: "{{ region }}"
+        state: present
+        tags:
+          Name: "{{ igw_name }}"
+      register: igw
+    
+    - name: Route IGW
+      ec2_vpc_route_table:
+        vpc_id: "{{ vpc_id }}"
+        region: "{{ region }}"
+        subnets:
+          - "{{ vpc_subnet_id }}"
+        routes:
+          - dest: 0.0.0.0/0
+            gateway_id: "{{ igw.gateway_id  }}"
+        tags:
+          Name: "{{ route_name }}"
+        

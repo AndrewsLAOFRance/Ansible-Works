@@ -1,0 +1,17 @@
+[new_server]
+new_server
+[new_server:vars]
+ansible_host=3.89.146.64
+ansible_ssh_private_key_file=~/.ssh/andrew.pem
+ansible_ssh_user=ubuntu
+ansible_ssh_port=22
+#ansible_ssh_pass=SSH_PASS
+
+[old_server]
+old_server
+[old_server:vars]
+ansible_host=54.85.128.192
+ansible_ssh_private_key_file=~/.ssh/andrew.pem
+ansible_ssh_user=ubuntu
+ansible_ssh_port=22
+#ansible_ssh_pass=SSH_PASS

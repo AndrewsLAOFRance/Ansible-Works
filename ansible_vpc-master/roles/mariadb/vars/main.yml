@@ -1,0 +1,30 @@
+---
+# vars file for mariadb
+mariadb_version: 10.4
+mariadb_packages:
+  - mariadb-server
+  - mariadb-client
+  - python-mysqldb
+
+mysql_root_password: 'RkEtntNMQR62YXmw'
+mysql_root_password_force_update: true
+
+mysql_databases:
+  - oc_dev
+  - oc_stage
+  - oc_prod
+
+mysql_users:
+  - name: oc_dev
+    host: '%'
+    password: "pF5fY89By42FwmLk"
+    priv: 'oc_dev.*:all'
+  - name: oc_stage
+    host: '%'
+    password: "pF5fY89By42FwmLk"
+    priv: 'oc_stage.*:all'
+  - name: oc_prod
+    host: '%'
+    password: "pF5fY89By42FwmLk"
+    priv: 'oc_prod.*:all'
+    

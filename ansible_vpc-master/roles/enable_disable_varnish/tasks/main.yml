@@ -1,0 +1,19 @@
+---
+# tasks file for enable_disable_varnish
+- set_fact:
+    varnish: "{{ varnish_answer }}"
+  when: varnish_answer is defined
+
+- set_fact:
+    htpasswd: "{{ htpasswd_answer }}"
+  when: htpasswd_answer is defined
+
+- name: Copy vhost configuration
+  template:
+    src: vhost.conf.j2
+    dest: /home/ubuntu/{{ vhost }}.conf
+    owner: root
+    group: root
+    mode: 0644
+    force: yes
+  #notify: reload nginx

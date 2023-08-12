@@ -1,0 +1,35 @@
+---
+#########################################################################
+########## Include tasks to generate and transfer templates    ##########
+##########             with replacing old files new.           ##########
+#########################################################################
+
+  # - name: "Copy backend.tf templete"
+  #   template:
+  #     src: "backend.tf.j2"
+  #     dest: "{{ dest_path_to_server_type }}/backend.tf"
+  #     mode: "0644"
+
+  # - name: "Copy terraform.tfvars templete"
+  #   template:
+  #     src: "{{ servers_name }}_terraform.tfvars.j2"
+  #     dest: "{{ dest_path_to_server_type }}/terraform.tfvars"
+  #     mode: "0644"
+
+  # - name: "Copy kernel_main.tf templete"
+  #   template:
+  #     src:  "{{ servers_name }}_main.tf.j2"
+  #     dest: "{{ dest_path_to_server_type }}/main.tf"
+  #     mode: "0644"
+  #   when: servers_name != "rtm"
+
+  # - name: "Replayce instances name prefix in the main.tf files"
+  #   lineinfile:
+  #     path: "{{ dest_path_to_server_type }}/main.tf"
+  #     regexp: '^(.*)instance_name_prefix (.*)$'
+  #     line: '   instance_name_prefix = "z${local.first_octet}s{{ env_prefix }}" // non-prod : t , prod : p'
+  #     backrefs: yes
+  #   when: servers_name == "rtm"
+
+
+

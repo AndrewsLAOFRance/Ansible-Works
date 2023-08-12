@@ -1,0 +1,7 @@
+# general tasks file for pre_install
+---
+- name: installs need packeges
+  include: pre_install.yml
+
+- name: create user and group
+  include: create_user_group.yml

@@ -1,0 +1,39 @@
+---
+# tasks file for Restore DB
+- block:
+  - name: Create DB on new server
+    become: yes
+    mysql_db:
+      login_user: root
+      login_password: "{{ mysql_root_password }}"
+      # login_host: localhost
+      login_unix_socket: "{{ mysql_unix_socket }}"
+      name: "{{ mysql_database }}"
+      # collation: "{{ mysql_database | default('utf8_general_ci') }}"
+      # encoding: "{{ mysql_database | default('utf8') }}"
+      state: present
+
+  - name: Ensure users are present
+    become: yes
+    mysql_user:
+      login_user: root
+      login_password: "{{ mysql_root_password }}"
+      login_unix_socket: "{{ mysql_unix_socket }}"
+      # login_host: localhost
+      name: "{{ mysql_user_name }}"
+      host: "{{ mysql_new_host | default('localhost') }}"
+      password: "{{ mysql_user_password }}"
+      priv: "{{ mysql_new_priv | default('*.*:usage') }}"
+      state: present
+      append_privs: no
+      encrypted: no
+    no_log: true
+
+  - name: Restore DB on new server
+    mysql_db:
+      login_user: "{{ mysql_user_name }}"
+      login_password: "{{ mysql_user_password }}"
+      state: import
+      name: "{{ mysql_database }}"
+      target: "{{ new_server_dest }}/{{ mysql_database }}.sql.bz2"
+  delegate_to: new_server

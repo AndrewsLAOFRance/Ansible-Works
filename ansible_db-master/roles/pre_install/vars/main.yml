@@ -1,0 +1,16 @@
+# vars file for pre_install
+---
+install_packeges:
+    - python
+    - software-properties-common
+    - htop
+    - python-pip
+    - git-all
+    - vim
+    - curl
+    - whois
+
+user_db: dbuser
+group_db: dbgroup
+home_dir_db: /home/{{ user_db }}
+my_src: /home/andrew/.ssh/ # or we can use other directory for our ss key

@@ -1,0 +1,10 @@
+# vars file for ec2
+---
+instace_type: t2.micro
+image: ami-085925f297f89fce1 # Ubuntu Server 18.04 LTS (HVM), SSD Volume Type
+keypair: andrew
+region: us-east-1
+vpc_name: andrew_vpc
+security_group: my_group
+ssh_key: ansible_ssh_private_key_file
+user: ansible_ssh_user

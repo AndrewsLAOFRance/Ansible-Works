@@ -1,0 +1,7 @@
+---
+# task file for php
+- name: Install PHP 
+  include: install_php.yml
+
+- name: Configue PHP 
+  include: configure_php.yml

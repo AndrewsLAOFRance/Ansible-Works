@@ -1,0 +1,12 @@
+---
+# tasks file for create DB dump
+- name: Create DB dump
+  mysql_db:
+    login_user: "{{ mysql_user_name }}"
+    login_password: "{{ mysql_user_password }}"
+    login_host: "{{ mysql_old_host }}"
+    state: dump
+    name: "{{ mysql_database }}"
+    single_transaction: yes
+    target: "{{ old_server_src }}/{{ mysql_database }}.sql.bz2"
+  delegate_to: old_server

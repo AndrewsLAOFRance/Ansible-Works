@@ -1,0 +1,45 @@
+---
+- name: Download wordpress
+  get_url: 
+    url: https://wordpress.org/latest.tar.gz
+    dest: /home/ubuntu/
+
+- name: Create directory for wordpress
+  file:
+    path: /var/www/html/wordpress
+    state: directory
+    mode: 0755
+
+- name: Extract wordpress
+  unarchive:
+    src: /home/ubuntu/wordpress-5.3.2.tar.gz
+    dest: /var/www/html/wordpress
+    extra_opts: [--strip-components=1]
+    remote_src: yes
+
+- name: Add permissions
+  shell: sudo chown -R www-data:www-data /var/www/html/wordpress/ && sudo chmod -R 755 /var/www/html/wordpress/
+
+- name: Apache2 config for worspress
+  copy:
+    src: wordpress.conf
+    dest: /etc/apache2/sites-available/
+
+- name: Add to module 
+  shell: sudo a2ensite wordpress.conf
+  notify:
+    - Restart apache2
+
+- name: Fetch random salts for WordPress config
+  local_action: command curl https://api.wordpress.org/secret-key/1.1/salt/
+  register: "wp_salt"
+  become: no
+  become_method: sudo
+
+- name: Copy wp-config
+  template:
+    src: wp-config.j2
+    dest: /var/www/html/wordpress/wp-config.php
+  notify:
+    - Restart apache2
+  
