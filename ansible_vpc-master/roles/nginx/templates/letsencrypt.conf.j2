@@ -1,0 +1,2 @@
+rewrite (^/\.well-known/.*$)	$1	break;
+location ^~ /.well-known/	{auth_basic off; root /var/www/letsencrypt; }

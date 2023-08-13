@@ -1,0 +1,32 @@
+---
+# vars file for infrastructure
+region: us-east-1
+ssh_key: ansible_ssh_private_key_file
+user: ansible_ssh_user
+##############################
+
+# VPC vars
+security_group: andrew_security_group
+cidr_block: 172.31.0.0/16
+vpc_name: andrew_vpc
+igw_name: andrew_igw
+route_name: andrew_route
+##############################
+
+# EC2 vars
+instace_type: t2.micro
+image: ami-085925f297f89fce1 # Ubuntu Server 18.04 LTS (HVM), SSD Volume Type
+keypair: andrew
+##############################
+
+# EC2 Web vars
+web_instance_name: web
+web_instance_type: web_server
+web_instance_env: web_env
+##############################
+
+# EC2 Web vars
+db_instance_name: db
+db_instance_type: db_server
+db_instance_env: db_env
+##############################

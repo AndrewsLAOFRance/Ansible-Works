@@ -1,0 +1,40 @@
+---
+########################################################################################################################
+############       Check the status of directories and create or skip creating directories,                 ############
+############                transfer files from source to target for the new cluster.                       ############
+########################################################################################################################
+
+  - name: "Check the existence of the VMs destination folder!"
+    stat:
+      path: "{{ dest_path_to_vms_dir }}"
+    register: check_vms_dir
+
+  - name: "Сreate a VM's directory!"
+    when: check_vms_dir.stat.exists == false
+    file:
+      path: "{{ dest_path_to_vms_dir }}/{{ servers_name }}"
+      state: directory
+      mode: "0775"
+      recurse: yes
+
+  - name: "Recheck path to VMs destination folder!"
+    stat:
+      path: "{{ dest_path_to_vms_dir }}"
+    register: recheck_vms_dir
+
+  - name: "VM's directory was created successfully!"
+    when: recheck_vms_dir.stat.exists == true
+    debug:
+      msg: "VM's subdirectory were created successfully!"
+
+  - name: "Copy APP directories from the source to destination folders"
+    when: recheck_vms_dir.stat.exists == true
+    synchronize:
+      src: "{{ src_path_to_server_type }}"
+      dest: "{{ dest_path_to_servers }}/"
+      archive: no
+      links: yes
+      recursive: yes
+      rsync_opts:
+        - "--no-motd"
+        - "--exclude=etchosts"

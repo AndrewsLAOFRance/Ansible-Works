@@ -1,0 +1,4 @@
+upstream varnish {
+    server {{ varnish_host }}:6081 max_conns=0 max_fails=0;
+    keepalive 20;
+}

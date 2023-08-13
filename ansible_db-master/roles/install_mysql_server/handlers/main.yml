@@ -1,0 +1,12 @@
+# handlers file for install_mysql_server
+---
+    - name: enable and start mysql-server
+      service:
+        name: mysql
+        state: started
+        enabled: yes
+
+    - name: restart mysql
+      service:
+        name: mysql
+        state: restarted

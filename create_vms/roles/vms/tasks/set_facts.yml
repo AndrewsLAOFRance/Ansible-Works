@@ -1,0 +1,14 @@
+---
+########################################################################
+########## Collection and set variables that needs for tasks. ##########
+########################################################################
+
+  - name: "Get IP address for new Cluster"
+    shell: |
+        cat {{ network_path }} |grep -A 1 "{{ cluster_id }}" |grep -e 'subnet_ip' |awk -F\" '{print $2}'|sed 's/0\/24$/2/g'
+    register: ip
+    changed_when: false
+
+  - name: "Set new variable for IP addresses"
+    set_fact:
+      ip_address: "{{ ip.stdout }}"

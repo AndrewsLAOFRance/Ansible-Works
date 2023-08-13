@@ -1,0 +1,11 @@
+---
+- name: "Deploying VM to GCP Cluster"
+  hosts: local
+  connection: local
+  gather_facts: true
+
+  roles:
+      
+      - name: "Created VM's"
+        role: vms
+        tags: deploy vms

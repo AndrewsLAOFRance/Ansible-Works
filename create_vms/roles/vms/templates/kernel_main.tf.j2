@@ -1,0 +1,283 @@
+{% if (vms_server == "kernel") and (server_types == "app") %}
+locals {
+  project_id           = data.terraform_remote_state.service_project.outputs.project_id
+  region               = element(data.terraform_remote_state.network.outputs.regional_host_vpc_subnets_regions, 0)
+  network              = data.terraform_remote_state.network.outputs.regional_host_vpc_self_link
+  network_name         = data.terraform_remote_state.network.outputs.regional_host_vpc_name
+  subnetwork           = data.terraform_remote_state.service_project.outputs.subnet_selflink
+  subnetwork_project   = data.terraform_remote_state.network.outputs.regional_host_vpc_project_id
+  first_octet          = substr(element(data.terraform_remote_state.network.outputs.regional_host_vpc_subnets_ips, 0), 3, 3)
+  instance_name_prefix = "z${local.first_octet}s{{ env_prefix }}" // non-prod : t , prod : p
+  hostname             = "${local.instance_name_prefix}-${var.cluster_id}${var.env}${var.component}"
+  tags                 = ["${var.cluster_id}${var.env}","${var.cluster_id}${var.env}-{{ short_vm_name }}-{{ server_types }}"]
+}
+
+
+#########################################
+# provide image and image project details
+#########################################
+
+data "google_compute_image" "image" {
+  project = var.source_image != "" ? var.source_image_project : "centos-cloud"
+  name    = var.source_image != "" ? var.source_image : "centos-7-v20201112"
+}
+
+
+data "google_compute_zones" "available" {
+  project = local.project_id
+  region  = local.region
+}
+
+module "{{ server_type_name }}_address" {
+  source      = "../../../../../../../../../modules/addresses"
+  project_id  = local.project_id
+  region      = local.region
+  subnetwork  = local.subnetwork
+  addresses   = var.{{ server_type_name }}_address_ips
+  first_octet = local.first_octet
+  env         = var.env
+  cluster_id  = var.cluster_id
+  component   = "{{ component }}"
+}
+
+module "{{ component }}_{{ server_types }}_disk" {
+  source            = "../../../../../../../../../modules/vm/disks"
+  region            = local.region
+  project_id        = local.project_id
+  cluster_id        = var.cluster_id
+  first_octet       = local.first_octet
+  env               = var.env
+  component         = var.component
+  type              = var.disk_type
+  instance_vars     = module.{{ server_type_name }}_address.instance_vars
+  instances_details = element(module.kla_vm.*.instances_details, 0)
+  disk_purpose      = "{{ server_types }}"
+  labels = merge({
+    "disk" = "pd-disk"
+  }, var.common_project_labels)
+  disk_name_suffix = "application"
+}
+
+module "{{ component }}_log_disk" {
+  source            = "../../../../../../../../../modules/vm/disks"
+  region            = local.region
+  project_id        = local.project_id
+  cluster_id        = var.cluster_id
+  first_octet       = local.first_octet
+  env               = var.env
+  component         = var.component
+  type              = var.disk_type
+  instance_vars     = module.{{ server_type_name }}_address.instance_vars
+  instances_details = element(module.kla_vm.*.instances_details, 0)
+  disk_purpose      = "log"
+  labels = merge({
+    "disk" = "pd-disk"
+  }, var.common_project_labels)
+  disk_name_suffix = "applogs"
+}
+
+##########################################
+#
+# Create Compute Instances using VM Module
+#
+##########################################
+
+module "{{ component }}_vm" {
+  source                 = "../../../../../../../../../modules/vm/compute_instance"
+  num_instances          = length(module.{{ server_type_name }}_address.addresses)
+  project_id             = local.project_id
+  cluster_id             = var.cluster_id
+  region                 = local.region
+  network                = local.network
+  subnetwork             = local.subnetwork
+  subnetwork_project     = local.subnetwork_project
+  static_ips             = module.{{ server_type_name }}_address.addresses
+  first_octet            = local.first_octet
+  env                    = var.env
+  component              = var.component
+  service_account_scopes = var.service_account_scopes
+  startup_script         = var.startup_script
+  metadata               = var.metadata
+  source_image_family    = var.source_image_family
+  source_image_project   = var.source_image_project
+  source_image           = data.google_compute_image.image.self_link
+  instance_vars          = module.{{ server_type_name }}_address.instance_vars
+  tags                   = local.tags
+  disk_type              = var.disk_type
+  auto_delete            = var.auto_delete
+  additional_disks       = var.additional_disks
+  labels                 = var.common_project_labels
+}
+{% endif %}
+{% if (vms_server == "kernel") and (server_types == "web") %}
+locals {
+  project_id           = data.terraform_remote_state.service_project.outputs.project_id
+  region               = element(data.terraform_remote_state.network.outputs.regional_host_vpc_subnets_regions, 0)
+  network              = data.terraform_remote_state.network.outputs.regional_host_vpc_self_link
+  network_name         = data.terraform_remote_state.network.outputs.regional_host_vpc_name
+  subnetwork           = data.terraform_remote_state.service_project.outputs.subnet_selflink
+  subnetwork_project   = data.terraform_remote_state.network.outputs.regional_host_vpc_project_id
+  first_octet          = substr(element(data.terraform_remote_state.network.outputs.regional_host_vpc_subnets_ips, 0), 3, 3)
+  instance_name_prefix = "z${local.first_octet}s{{ instances_prefix }}" // non-prod : t , prod : p
+  hostname             = "${var.cluster_id}${var.env}${var.component}"
+  instance_group_ids   = toset(google_compute_instance_group.{{ component }}_{{ server_types }}_umig.*.id)
+  instance_group_count = min(
+    length(module.{{ server_type_name }}_address.addresses), 2,
+  )
+  tags = ["${var.cluster_id}${var.env}", "${var.cluster_id}${var.env}-{{ short_vm_name }}-{{ server_types }}"]
+
+{% if (customers_state == true) %}
+{% for item in customers_id_list |unique %}
+{% if  item == "reflexis" %}
+  map_details = [for ip in keys(var.{{ server_type_name }}_address_ips) : {
+    customer  = var.{{ server_type_name }}_address_ips[ip]["customer"]
+    self_link = tomap(module.{{ component }}_vm.instances_all_details)[ip]["self_link"]
+    zone      = tomap(module.{{ component }}_vm.instances_all_details)[ip]["zone"]
+  } if var.{{ server_type_name }}_address_ips[ip]["customer"] == "{{ item }}"]
+
+{% else %}
+
+  {{ item }}_map_details = [for ip in keys(var.{{ server_type_name }}_address_ips) : {
+    customer  = var.{{ server_type_name }}_address_ips[ip]["customer"]
+    self_link = tomap(module.{{ component }}_vm.instances_all_details)[ip]["self_link"]
+    zone      = tomap(module.{{ component }}_vm.instances_all_details)[ip]["zone"]
+  } if var.{{ server_type_name }}_address_ips[ip]["customer"] == "{{ item }}"]
+
+{% endif %}
+{% endfor %}
+{% else %}
+
+{% endif %}
+}
+
+#########################################
+# provide image and image project details
+#########################################
+data "google_compute_image" "image" {
+  project = var.source_image != "" ? var.source_image_project : "centos-cloud"
+  name    = var.source_image != "" ? var.source_image : "centos-7-v20201112"
+}
+
+data "google_compute_zones" "available" {
+  project = local.project_id
+  region  = local.region
+}
+
+module "{{ server_type_name }}_address" {
+  source      = "../../../../../../../../../modules/addresses"
+  project_id  = local.project_id
+  region      = local.region
+  subnetwork  = local.subnetwork
+  addresses   = var.{{ server_type_name }}_address_ips
+  first_octet = local.first_octet
+  env         = var.env
+  cluster_id  = var.cluster_id
+  component   = "{{ component }}"
+}
+
+module "{{ component }}_app_disk" {
+  source            = "../../../../../../../../../modules/vm/disks"
+  region            = local.region
+  project_id        = local.project_id
+  cluster_id        = var.cluster_id
+  first_octet       = local.first_octet
+  env               = var.env
+  component         = var.component
+  type              = var.disk_type
+  instance_vars     = module.{{ server_type_name }}_address.instance_vars
+  instances_details = element(module.{{ component }}_vm.*.instances_details, 0)
+  disk_purpose      = "app"
+  labels = merge({
+    "disk" = "pd-disk"
+  }, var.common_project_labels)
+  disk_name_suffix = "application"
+}
+
+module "{{ component }}_vm" {
+  source                 = "../../../../../../../../../modules/vm/compute_instance"
+  num_instances          = length(module.{{ server_type_name }}_address.addresses)
+  project_id             = local.project_id
+  cluster_id             = var.cluster_id
+  region                 = local.region
+  network                = local.network
+  subnetwork             = local.subnetwork
+  subnetwork_project     = local.subnetwork_project
+  static_ips             = module.{{ server_type_name }}_address.addresses
+  first_octet            = local.first_octet
+  env                    = var.env
+  component              = var.component
+  service_account_scopes = var.service_account_scopes
+  startup_script         = var.startup_script
+  metadata               = var.metadata
+  source_image_family    = var.source_image_family
+  source_image_project   = var.source_image_project
+  source_image           = data.google_compute_image.image.self_link
+  instance_vars          = module.{{ server_type_name }}_address.instance_vars
+  tags                   = local.tags
+  disk_type              = var.disk_type
+  auto_delete            = var.auto_delete
+  additional_disks       = var.additional_disks
+  labels                 = var.common_project_labels
+  depends_on = [
+    module.{{ server_type_name }}_address
+  ]
+}
+{% if (customers_state == true) %}
+######################################
+#### UMIG Creation Module  ###########
+######################################
+{% for items in uniq_count_customers_id %}
+{% if  items.id == "reflexis" %}
+resource "google_compute_instance_group" "{{ component }}_{{ server_types }}_umig" {
+  count     =  {{ items.count }}
+  name      = "${var.cluster_id}${var.env}knl-instance-group-${format("%02d", count.index + 1)}"
+  project   = local.project_id
+{% if (items.count == "1") %}
+  zone      = element(data.google_compute_zones.available.names, count.index + 1)
+  instances = matchkeys([for s in local.map_details : s.self_link], [for z in local.map_details : z.zone], [data.google_compute_zones.available.names[count.index]] + 1)
+{% else %}
+  zone      = element(data.google_compute_zones.available.names, count.index)
+  instances = matchkeys([for s in local.map_details : s.self_link], [for z in local.map_details : z.zone], [data.google_compute_zones.available.names[count.index]])
+{% endif %}
+  dynamic "named_port" {
+    for_each = var.named_ports
+    content {
+      name = named_port.value.name
+      port = named_port.value.port
+    }
+  }
+  depends_on = [
+    module.{{ component }}_vm
+  ]
+}
+{% else %}
+
+resource "google_compute_instance_group" "{{ component }}_{{ server_types }}_{{ items.id }}_umig" {
+  count     = {{  items.count }}
+  name      = "${var.cluster_id}${var.env}knl-{{ items.id }}-instance-group-${format("%02d", count.index + 1)}"
+  project   = local.project_id
+{% if (items.count == "1") %}
+  zone      = element(data.google_compute_zones.available.names, count.index + 1)
+  instances = matchkeys([for s in local.{{ items.id }}_map_details : s.self_link], [for z in local.{{ items.id }}_map_details : z.zone], [data.google_compute_zones.available.names[count.index]] + 1)
+{% else %}
+  zone      = element(data.google_compute_zones.available.names, count.index)
+  instances = matchkeys([for s in local.{{ items.id }}_map_details : s.self_link], [for z in local.{{ items.id }}_map_details : z.zone], [data.google_compute_zones.available.names[count.index]])
+{% endif %}
+  dynamic "named_port" {
+    for_each = var.named_ports
+    content {
+      name = named_port.value.name
+      port = named_port.value.port
+    }
+  }
+  depends_on = [
+    module.{{ component }}_vm
+  ]
+}
+
+{% endif %}
+{% endfor %}
+{% else %}
+
+{% endif %}
+{% endif %}

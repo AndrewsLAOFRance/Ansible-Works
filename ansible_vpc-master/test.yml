@@ -1,0 +1,26 @@
+- hosts: web
+  remote_user: ubuntu
+  become: yes
+  gather_facts: false
+
+ 
+  vars_prompt:
+    - name: "mysql_databases"
+      prompt: "Enter a list of database names"
+      private: no
+    - name: "mysql_users_names"
+      prompt: "Enter a list of users names"
+      private: no
+
+  tasks:
+    - set_fact:
+        mysql_databases_name: "{{ mysql_databases.split(', ') }}"
+        mysql_users_name: "{{ mysql_users_names.split(', ') }}"
+
+    - debug:
+        msg: "{{ item }}"
+      with_items: "{{mysql_databases_name}}"
+
+    - debug:
+        msg: "{{ item }}"
+      with_items: "{{mysql_users_name}}"

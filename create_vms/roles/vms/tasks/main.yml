@@ -1,0 +1,25 @@
+---
+#######################################################################################################################
+########## The main file that includes in self all tasks and variables for creating and deploy Clusters VM's ##########
+#######################################################################################################################
+  - name: "Include inpunt variables file"
+    include_vars: "{{ item }}"
+    with_items: "{{ list_input_data }}"
+
+  # - name: "Include tasks to switch the repository branch"
+  #   include_tasks: git_checkout.yml
+
+  - name: "Include tasks to collect information about vms"
+    include_tasks: set_facts.yml
+
+  # - name: "Include tasks to check for the status of directories"
+  #   include_tasks: file_sys_operation.yml
+
+  # - name: "Include tasks to transfer generate templates"
+  #   include_tasks: templates.yml
+
+  # - name: "Include to repository git add and setup commit messages for new files"
+  #   include_tasks: git_add.yml
+
+  # - name: "Run Terraform commads for the new VM's"
+  #   include_tasks: terrafor_plan.yml

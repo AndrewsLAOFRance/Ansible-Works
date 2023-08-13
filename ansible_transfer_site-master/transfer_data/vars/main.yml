@@ -1,0 +1,23 @@
+---
+# vars file for tarnsfer site
+#
+vhost: domain name
+# Vars for DB
+mysql_root_password: RkEtntNMQR62YXmw
+mysql_user_name: migration_news  
+mysql_user_password: "Migration@123_h"
+mysql_new_host: '%'
+mysql_new_priv: "{{ mysql_database }}.*:all"
+mysql_database: migration
+mysql_old_host: 127.0.0.1
+mysql_new_host: 
+mysql_unix_socket: /var/run/mysqld/mysqld.sock
+#########################################
+# 
+# Vars for files
+ssh_key_src_path: /home/ann/.ssh/andrew.pem
+ssh_key_dest_path: /home/ubuntu/.ssh/andrew.pem
+owner: ubuntu
+old_server_src: /home/ubuntu/old_server_folder/
+new_server_dest: /home/ubuntu/new_server_folder/
+#########################################

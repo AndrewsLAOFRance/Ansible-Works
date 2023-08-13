@@ -1,0 +1,25 @@
+---
+# vars file for nginx
+nginx_vhosts: []
+mage_enable: true
+htpass: "evo_dev:$apr1$mcih67fy$Hn7TBgdhKPBaBaEnuRSID/"
+ssl: false
+#first_start: false
+#varnish: false
+prod: false
+varnish_host: 127.0.0.1
+nginx_folders:
+  - /etc/nginx/vhost.d
+  - /etc/nginx/ssl
+  - /var/www/letsencrypt
+  - /var/www/{{ vhost }}
+nginx_ports: 
+  - 80
+  - 443
+
+# vars file for certbot
+certbot_packages: 
+  - certbot
+  - python3-certbot-nginx
+certbot_admin_email: alevko@gomage.com
+certbot_plugin: nginx

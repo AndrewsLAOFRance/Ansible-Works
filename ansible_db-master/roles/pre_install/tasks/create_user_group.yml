@@ -1,0 +1,50 @@
+# task for create user and group
+---
+    - name: create group
+      group:
+        name: "{{ group_db }}"
+        state: present
+    
+    - name: create user
+      user:
+        name: "{{ user_db }}"
+        password: ''
+        group: "{{ group_db }}"
+        groups: "{{ group_db }}"
+        shell: /bin/bash
+        system: no
+        createhome: yes
+        home: "{{ home_dir_db }}"
+        state: present
+
+    - name: add user to sudories
+      copy:
+        dest: "/etc/sudoers.d/{{ user_db }}"
+        content: "{{ user_db }} ALL=(ALL)  NOPASSWD: ALL"
+    
+    - name: create mode user directory
+      file:
+        path: "{{ home_dir_db }}"
+        state: directory
+        owner: "{{ user_db }}"
+        group: "{{ group_db }}"
+        mode: 0700
+        recurse: yes 
+        
+    - name: create ssh directory for user
+      file:
+        path: "{{ home_dir_db }}/.ssh"
+        state: directory
+        owner: "{{ user_db }}"
+        group: "{{ group_db }}"
+        mode: 0700
+        recurse: yes 
+    
+    - name: copy ssh key fromm local to remote servers
+      copy:
+        src: "{{ my_src }}"
+        dest: "{{ home_dir_db }}/.ssh/"
+        directory_mode: yes
+        owner: "{{ user_db }}"
+        group: "{{ group_db }}"
+        mode: 0600

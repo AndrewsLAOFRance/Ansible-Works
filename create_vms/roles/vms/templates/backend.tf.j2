@@ -1,0 +1,6 @@
+terraform {
+  backend "gcs" {
+    bucket = "rfx-bkt-eu-gss-tfstate"
+    prefix = "rfx-gcp-tf-{{ locations }}/prod/compute/{{ cluster_id }}-{{ env }}/components/vms/{{ servers_name }}/{{ server_types }}"
+  }
+}

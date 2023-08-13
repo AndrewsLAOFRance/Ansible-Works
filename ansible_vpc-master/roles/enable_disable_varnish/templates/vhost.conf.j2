@@ -1,0 +1,67 @@
+# {{ ansible_managed }}
+
+{% if varnish %}
+server {
+
+    listen 80;
+    server_name {{ vhost }} www.{{ vhost }};
+
+    listen 443 ssl http2;
+    ssl_certificate /etc/letsencrypt/live/{{ vhost }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ vhost }}/privkey.pem;
+    include conf.d/redirect-to-https.conf;
+
+    include conf.d/common.conf;
+
+{% if htpasswd %}
+    satisfy any;
+
+    allow 93.187.185.6;
+    allow 159.89.7.142;
+    deny  all;
+
+    auth_basic "Restricted";
+    auth_basic_user_file /etc/nginx/htpasswd;
+{% endif %}
+    
+    location / {
+        proxy_pass http://varnish;
+	    include conf.d/proxy-params.conf;
+    }
+}
+{% endif %}
+
+server {
+    {% if varnish %}
+    listen 8080;
+    {% else %} 
+    listen 80;
+    include conf.d/common.conf;
+    {% endif %}
+
+{% if not varnish %}
+    listen 443 ssl http2;
+    include conf.d/redirect-to-https.conf;
+    ssl_certificate /etc/letsencrypt/live/{{ vhost }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ vhost }}/privkey.pem;
+{% endif %}
+
+    server_name {{ vhost }} www.{{ vhost }};
+    set $MAGE_ROOT /var/www/{{ vhost }}/current;
+
+{% if htpasswd %}
+    satisfy any;
+
+    allow 93.187.185.6;
+    allow 159.89.7.142;
+    deny  all;
+
+    auth_basic "Restricted";
+    auth_basic_user_file /etc/nginx/htpasswd;
+{% endif %}
+
+{% if mage_enable %}
+    include conf.d/magento2.conf;
+{% endif %}
+
+}

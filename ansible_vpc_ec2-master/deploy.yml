@@ -1,0 +1,11 @@
+---
+  - name: Playbook for web server
+    hosts: all
+    remote_user: ubuntu
+    become: yes
+    gather_facts: true
+
+    roles:
+      
+      - role: pre_install
+        tags: update

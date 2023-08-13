@@ -1,0 +1,54 @@
+user www-data;
+worker_processes {{ ansible_processor_vcpus }};
+pid /run/nginx.pid;
+
+events {
+        worker_connections 1024;
+        multi_accept on;
+        use epoll;
+}
+
+http {
+
+        ##
+        # Basic Settings
+        ##
+
+        sendfile on;
+        tcp_nodelay on;
+        tcp_nopush on;
+        keepalive_timeout  5;
+        reset_timedout_connection on;
+        server_tokens off;
+        ignore_invalid_headers on;
+
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+
+
+
+        ##
+        # Logging Settings
+        ##
+
+        access_log /var/log/nginx/access.log;
+        error_log /var/log/nginx/error.log;
+
+        # https://ruhighload.com/%D0%9E%D1%88%D0%B8%D0%B1%D0%BA%D0%B0+nginx+upstream+sent+too+big+header
+        fastcgi_buffer_size 32k;
+        fastcgi_buffers 4 32k;
+
+        ##
+        # Virtual Host Configs
+        ##
+        
+
+        
+        include conf.d/ssl-params.conf;
+        include conf.d/gzip.conf;
+        include conf.d/magento-upstream.conf;
+        include conf.d/varnish-upstream.conf;
+        include conf.d/cloudflare.conf;
+        include conf.d/blacklist.conf;
+        include vhost.d/*.conf;
+}

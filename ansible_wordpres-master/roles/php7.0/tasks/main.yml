@@ -1,0 +1,19 @@
+---
+- name: Install PHP
+  apt: 
+    name: "{{ item }}"
+    state: present 
+  with_items: 
+    - php7.0-mysql  
+    - php7.0-curl
+    - php7.0-json 
+    - php7.0-cgi 
+    - php7.0
+    - libapache2-mod-php7.0 
+    - php7.0-xml    
+
+#- name: Copy phpinfo file 
+#  copy:
+#    src: info.php
+#    dest: /var/www/html/
+  notify: Restart apache

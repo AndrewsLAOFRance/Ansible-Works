@@ -1,0 +1,67 @@
+# tasks file for mysql_server_slaves
+---
+    - name: configure mysql master 
+      block:
+        
+        - name: edit config file for master server
+          replace:
+            path: /etc/mysql/mysql.conf.d/mysqld.cnf
+            regexp: '^(.*)bind-address = 127.0.0.1(.*)$'
+            replace: 'bind-address  =  0.0.0.0'
+    
+        - name: edit config file for slave server add to end of file
+          blockinfile:
+            path: /etc/mysql/mysql.conf.d/mysqld.cnf
+            block: |
+              server-id = 2 
+              log_bin = /var/log/mysql/mysql-bin.log
+              log_bin_index =/var/log/mysql/mysql-bin.log.index
+              relay_log = /var/log/mysql/mysql-relay-bin
+              relay_log_index = /var/log/mysql/mysql-relay-bin.index
+          notify: restar mysql
+          when: inventory_hostname in groups['db_cluster'][0]
+
+        - name: edit config file for slave server add to end of file
+          blockinfile:
+            path: /etc/mysql/mysql.conf.d/mysqld.cnf
+            block: |
+              server-id = 3 
+              log_bin = /var/log/mysql/mysql-bin.log
+              log_bin_index =/var/log/mysql/mysql-bin.log.index
+              relay_log = /var/log/mysql/mysql-relay-bin
+              relay_log_index = /var/log/mysql/mysql-relay-bin.index
+          notify: restar mysql
+          when: inventory_hostname in groups['db_cluster'][1]
+          
+        - name: removes all anonymous user accounts
+          mysql_user:
+            name: ''
+            host_all: yes
+            state: absent
+
+        - name: create user replicaton 
+          mysql_user:
+            name: dbuser
+            password: "{{ db_pass }}"
+            priv: "*.*:REPLICATION CLIENT"
+            state: present
+
+            #when: inventory_hostname in groups['db_cluster']
+      when: server_type == 'cluster'
+
+    - name: get ip host
+      set_fact:
+        #master_ip: "{{ groups['db_master'] | map('extract',hostvars,'ansible_host') | list }}"
+        master_ip: "{{ hostvars[groups['db_master'][0]]['ansible_host']}}"
+    - debug:
+        msg: "{{ master_ip }}"
+
+    - name: change master to master server and use binary log file with positio
+      mysql_replication:
+        mode: changemaster
+        master_host: "{{ master_ip }}"
+        master_user: dbuser
+        master_password: "{{ db_pass }}"
+    #    master_log_file: "{{ mi.master_status.File }}"
+    #    master_log_pos: "{{ mi.master_status.Position }}"
+      when: server_type == 'cluster'

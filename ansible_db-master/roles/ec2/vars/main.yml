@@ -1,0 +1,8 @@
+# vars file for ec2
+---
+# variables for all ec2 instanses
+instace_type: t2.micro
+image: ami-085925f297f89fce1 # Ubuntu Server 18.04 LTS (HVM), SSD Volume Type
+keypair: andrew
+region: us-east-1
+security_group: db_project

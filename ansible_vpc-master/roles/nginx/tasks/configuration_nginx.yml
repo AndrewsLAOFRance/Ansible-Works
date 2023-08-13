@@ -1,0 +1,74 @@
+---
+# task file for moving config files to targets hosts
+- set_fact:
+    varnish: "{{ varnish_answer }}"
+  when: varnish_answer is defined
+
+- set_fact:
+    htpasswd: "{{ htpasswd_answer }}"
+  when: htpasswd_answer is defined
+
+- name: Create folders
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0775
+  with_items: "{{ nginx_folders }}"
+
+- name: Copy vhost configuration
+  template:
+    src: vhost.conf.j2
+    dest: /etc/nginx/vhost.d/{{ vhost }}.conf
+    owner: root
+    group: root
+    mode: 0644
+    force: yes
+  notify: reload nginx
+
+- name: Copy nginx conf
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: 0644
+    force: yes
+
+- name: Copy other conf
+  template:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+  with_items:
+    - {src: 'magento2.conf.j2', dest: '/etc/nginx/conf.d/magento2.conf'}
+    - {src: 'common.conf.j2', dest: '/etc/nginx/conf.d/common.conf'}
+    - {src: 'deny-special-files.conf.j2', dest: '/etc/nginx/conf.d/deny-special-files.conf'}
+    - {src: 'gzip.conf.j2', dest: '/etc/nginx/conf.d/gzip.conf'}
+    - {src: 'letsencrypt.conf.j2', dest: '/etc/nginx/conf.d/letsencrypt.conf'}
+    - {src: 'magento-upstream.conf.j2', dest: '/etc/nginx/conf.d/magento-upstream.conf'}
+    - {src: 'proxy-params.conf.j2', dest: '/etc/nginx/conf.d/proxy-params.conf'}
+    - {src: 'redirect-to-https.conf.j2', dest: '/etc/nginx/conf.d/redirect-to-https.conf'}
+    - {src: 'ssl-params.conf.j2', dest: '/etc/nginx/conf.d/ssl-params.conf'}
+    - {src: 'varnish-upstream.conf.j2', dest: '/etc/nginx/conf.d/varnish-upstream.conf'}
+    - {src: 'redirect-to-www.conf.j2', dest: '/etc/nginx/conf.d/redirect-to-www.conf'}
+    - {src: 'cloudflare.conf', dest: '/etc/nginx/conf.d/cloudflare.conf'}
+    - {src: 'exporter.conf', dest: '/etc/nginx/vhost.d/exporter.conf'}
+    - {src: 'blacklist.conf', dest: '/etc/nginx/conf.d/blacklist.conf'}
+    - {src: 'htpasswd.j2', dest: '/etc/nginx/htpasswd'}
+
+- name: Generate Diffie-Hellman parameters with the default size (4096 bits)
+  openssl_dhparam:
+    path: /etc/nginx/ssl/dhparams.pem
+  notify: start and enable nginx service
+
+- name: Restart nginx
+  systemd:
+    name: nginx
+    state: reloaded
+
+- name: open ports
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+  with_items: "{{ nginx_ports }}"

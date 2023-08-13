@@ -1,0 +1,24 @@
+---
+- name: copy my.cnf global configuration
+  template:
+    src: my.cnf.j2
+    dest: /etc/mysql/my.cnf
+    owner: root
+    group: root
+    mode: 0644
+    force: yes
+  notify: restart mysql
+
+- name: start and enable mysql service
+  systemd:
+    name: mysql
+    state: started
+    enabled: yes
+
+#- name: open ports
+#  ufw:
+#    rule: allow
+#    src: 10.0.0.0/8
+#    port: "{{ item }}"
+#  with_items:
+#    - 3306

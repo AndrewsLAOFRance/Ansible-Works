@@ -1,0 +1,133 @@
+{% if (servers_name == "kernel") and (servers_type == "app") %}
+####################
+# environment inputs
+####################
+
+# specify cluster id
+cluster_id = "{{ cluster }}"
+# specify environment ex: pr, pp, sb
+env      = "{{ env }}"
+location = "{{ location }}"
+prefix   = "rfx"
+# specify component ex: klw (kernel web), kla (kernel app), web(RTM Web Servers), was(RTM app Servers), apc(cognos), nty(notification servers), dbm (DB2 primary), dbs (DB2 Secondary)
+component = "{{ component }}"
+
+# Instance values
+# specify serviceaccount email id
+service_account_scopes = ["cloud-platform"]
+startup_script         = ""
+metadata               = {
+  startup-script-url = ""
+  class              = "{{ servers_name }}"
+  type               = "{{ server_types }}"
+}
+source_image_family    = ""
+source_image_project   = "za-global-golden-images-p"
+source_image           = "rfx-gi-rhel79"
+auto_delete            = true
+disk_type              = "pd-ssd"
+tags                   = ["allow-ssh-ingress-from-iap-fw", "nat"]
+
+common_project_labels = {
+  bu-owner-manager      = "ro4654",
+  bu-owner-technical    = "sb1859",
+  cost-center           = "42736",
+  instance-type         = "compute-engine",
+  security-agent-exempt = "none",
+  tier                  = "{{ project_tier_labels }}"
+}
+
+{{ server_type_name }}_address_ips = {
+{% for counters in range(0, (kernel.app_vms.count)) %}
+  "{{ (((kla_ip | ipaddr('int')) + counters) | ipaddr) }}" = {
+{% if ((((kernel.app_vms.ram[counters])|int/((kernel.app_vms.cpu[counters])|int))|int()) == (4 |int(0))) %}
+      instance_type     = "{{ app_vms_type }}-standard-{{ kernel.app_vms.cpu[counters] }}-{{ ((kernel.app_vms.ram[counters]|int) * (1024|int)) }}",
+{% elif ((((kernel.app_vms.ram[counters])|int/((kernel.app_vms.cpu[counters])|int))|int()) == (8 |int(0))) %}
+      instance_type     = "{{ app_vms_type }}-highmem-{{ kernel.app_vms.cpu[counters] }}-{{ ((kernel.app_vms.ram[counters]|int) * (1024|int)) }}",
+{% elif ((((kernel.app_vms.ram[counters])|int)) == (((kernel.app_vms.cpu[counters])|int))) %}
+      instance_type     = "{{ app_vms_type }}-highcpu-{{ kernel.app_vms.cpu[counters] }}-{{ ((kernel.app_vms.ram[counters]|int) * (1024|int)) }}",
+{% else %}
+      instance_type     = "{{ app_vms_type }}-custom-{{ kernel.app_vms.cpu[counters] }}-{{ ((kernel.app_vms.ram[counters]|int) * (1024|int)) }}",
+{% endif %}
+      boot_disk_size_gb = "51",
+      app_disk_size_gb  = "{{ kernel.app_vms.app_disk_size[counters] }}",
+      log_disk_size_gb  = "{{ kernel.app_vms.log_disk[counters] }}",
+      host_alias        = ""
+  }
+{% endfor %}
+}
+{% endif %}
+
+{% if (servers_name == "kernel") and (servers_type == "web") %}
+####################
+# environment inputs
+####################
+
+# specify cluster id
+cluster_id = "{{ cluster }}"
+# specify environment ex: pr, pp, sb
+env      = "{{ env }}"
+location = "{{ short_location }}"
+prefix   = "rfx"
+# specify component ex: klw (kernel web), kla (kernel app), web(RTM Web Servers), was(RTM app Servers), apc(cognos), nty(notification servers), dbm (DB2 primary), dbs (DB2 Secondary)
+component = "{{ component }}"
+
+# Instance values
+# specify serviceaccount email id
+service_account_scopes = ["cloud-platform"]
+startup_script         = ""
+metadata               = {
+  startup-script-url = ""
+  class              = "{{ servers_name }}"
+  type               = "{{ server_types }}"
+}
+source_image_family    = ""
+source_image_project   = "za-global-golden-images-p"
+source_image           = "rfx-gi-rhel79"
+auto_delete            = true
+disk_type              = "pd-ssd"
+tags                   = ["allow-ssh-ingress-from-iap-fw", "nat"]
+named_ports = [
+  {
+    name = "http",
+    port = 8080
+  }
+]
+
+common_project_labels = {
+  bu-owner-manager      = "ro4654",
+  bu-owner-technical    = "sb1859",
+  cost-center           = "42736",
+  instance-type         = "compute-engine",
+  security-agent-exempt = "none",
+  tier                  = "{{ project_tier_labels }}"
+}
+
+{{ server_type_name }}_address_ips = {
+{% for counters in range(0, (kernel.web_vms.count)) %}
+  "{{ (((klw_ip | ipaddr('int')) + counters) | ipaddr) }}" = {
+{% if ((((kernel.web_vms.ram[counters])|int/((kernel.web_vms.cpu[counters])|int))|int()) == (4 |int(0))) %}
+      instance_type     = "{{ web_vms_type }}-standard-{{ kernel.web_vms.cpu[counters] }}-{{ ((kernel.web_vms.ram[counters]|int) * (1024|int)) }}",
+{% elif ((((kernel.web_vms.ram[counters])|int/((kernel.web_vms.cpu[counters])|int))|int()) == (8 |int(0))) %}
+      instance_type     = "{{ web_vms_type }}-highmem-{{ kernel.web_vms.cpu[counters] }}-{{ ((kernel.web_vms.ram[counters]|int) * (1024|int)) }}",
+{% elif ((((kernel.web_vms.ram[counters])|int)) == (((kernel.web_vms.cpu[counters])|int))) %}
+      instance_type     = "{{ web_vms_type }}-highcpu-{{ kernel.web_vms.cpu[counters] }}-{{ ((kernel.web_vms.ram[counters]|int) * (1024|int)) }}",
+{% else %}
+      instance_type     = "{{ web_vms_type }}-custom-{{ kernel.web_vms.cpu[counters] }}-{{ ((kernel.web_vms.ram[counters]|int) * (1024|int)) }}",
+{% endif %}
+      boot_disk_size_gb = "51",
+      app_disk_size_gb  = "{{ kernel.web_vms.app_disk_size[counters] }}",
+{% if customers_state == true %}
+      customer         = "{{ customers[counters] }}",
+{% else %}
+      customer         = "",
+{% endif %}
+      host_alias        = ""
+  }
+{% endfor %}
+}
+{% endif %}
+
+
+
+

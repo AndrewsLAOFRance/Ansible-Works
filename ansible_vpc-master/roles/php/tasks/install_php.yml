@@ -1,0 +1,36 @@
+---
+- name: Check PHP directory
+  stat:
+    path: /etc/php/{{ php_version }}
+  register: php_dir
+
+- name: Print if PHP directory already existed
+  debug:
+    msg: "the varnish directory is already existed"
+  when: php_dir.stat.exists
+
+- name: Install php and composer 
+  block:
+    - name: Install PHP and packages
+      apt_repository:
+        repo: ppa:ondrej/php
+        
+    - apt:
+        name: "{{ php_packages }}"
+        state: latest
+
+    - apt:
+        name: "composer"
+        state: latest
+  when: php_dir.stat.exists == false
+# - apt:
+#     name: "libmcrypt-dev"
+#     state: latest
+
+
+# - pear:
+#     name: mcrypt-1.0.2
+#     state: present
+
+# - name: Install Package
+#   shell: pecl install mcrypt-1.0.2

@@ -1,0 +1,4 @@
+# vars file for security_group
+---
+region: us-east-1
+security_group: db_project

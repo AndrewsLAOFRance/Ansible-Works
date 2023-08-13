@@ -1,0 +1,13 @@
+# vars file for ec2
+---
+region: us-east-1
+security_group: my_group
+vpc_cidr_block: 172.31.0.0/16
+vpc_name: andrew_vpc
+igw_name: andrew_igw
+route_name: andrew_route
+ssh_key: ansible_ssh_private_key_file
+user: ansible_ssh_user
+
+
+

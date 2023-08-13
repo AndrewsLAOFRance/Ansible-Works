@@ -1,0 +1,38 @@
+---
+# tasks file for security group
+- name: Get info about vpc and subnet
+  ec2_vpc_subnet_info:
+    region: "{{ region }}"
+    filters:
+      "tag:Name": "{{ vpc_name }}_subnet"
+  register: vpc_subnet_facts
+
+- name: Set vpc id and vpc subnet id variables
+  set_fact:
+    subnets: "{{ vpc_subnet_facts.subnets }}"
+        
+- name: Create security group for instance
+  ec2_group:
+    name: "{{ security_group }}"
+    vpc_id: "{{ item.vpc_id }}"
+    description: my security group
+    tags:
+      Name: "{{ security_group }}"
+    region: "{{ region }}"
+    rules:
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 443
+        to_port: 443
+        cidr_ip: 0.0.0.0/0
+    rules_egress:
+        - proto: all
+          cidr_ip: 0.0.0.0/0    
+  with_items: "{{ subnets }}"

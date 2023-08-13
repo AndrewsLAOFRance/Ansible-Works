@@ -1,0 +1,12 @@
+---
+  - name: Playbook for creating infrastructure
+    hosts: localhost
+    connection: local
+    gather_facts: false
+
+    roles:
+
+      - role: infrastructure
+        tags: create_infrastructure
+
+    

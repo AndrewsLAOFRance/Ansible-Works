@@ -1,0 +1,24 @@
+- hosts: web
+  remote_user: ubuntu
+  become: yes
+
+  pre_tasks:
+    - name: Set discovered Ansible Python interpreter.
+      set_fact:
+        ansible_python_interpreter: "{{ ansible_facts.python.executable }}"
+      when: ansible_python_interpreter is not defined
+
+    - name: Install pip
+      apt:
+        name: python-pip
+        state: present
+    
+    - name: Make sure pymysql is present
+      #become: true # needed if the other tasks are not played as root
+      pip:
+        name: pymysql
+        state: present
+
+  roles:
+    - role: mariadb
+      tags: mariadb

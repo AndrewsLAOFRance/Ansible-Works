@@ -1,0 +1,43 @@
+---
+- name: Playbook for web server installation
+  hosts: web
+  remote_user: ubuntu
+  become: yes
+  gather_facts: False
+
+  vars_prompt:
+    - name: "vhost"
+      prompt: "Enter domin name"
+      private: no
+    - name: "varnish_answer"
+      prompt: "Do you want to enable varnish configuration(true/false)?"
+      private: no
+    - name: "htpasswd_answer"
+      prompt: "Do you want to use htpasswd(true/false)?"
+      private: no
+    - name: "gitlab_user"
+      prompt: "Enter your gitlab username"
+      private: no
+    - name: "gitlab_password"
+      prompt: "Enter your gitlab password"
+      private: yes 
+    - name: "gitlab_repo"
+      prompt: "Enter project name"
+      private: no
+
+  roles:
+    
+    - role: pre_install
+      tags: update 
+
+    - role: php
+      tags: install_configure_php
+
+    - role: nginx
+      tags: install_configure_nginx
+
+    - role: git_clone
+      tags: git_clone_project
+
+    - role: enable_disable_varnish
+      tags: enable_disable_varnish_config

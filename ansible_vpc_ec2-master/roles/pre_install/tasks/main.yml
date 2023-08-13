@@ -1,0 +1,26 @@
+---
+# tasks file for pre_install
+- name: Update apt cache
+  apt: 
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Upgrade apt packeges
+  apt:
+    upgrade: dist
+    force_apt_get: yes
+
+- name: Check for Python
+  raw: test -e /usr/bin/python3
+  changed_when: false
+  failed_when: false
+  register: check_python
+
+- name: Install Python
+  raw: apt -y update && apt install -y python-minimal
+  when: check_python.rc != 0
+
+- name: Install packeges
+  apt: 
+    name: "{{ packages }}"
+    state: latest

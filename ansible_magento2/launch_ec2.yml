@@ -1,0 +1,11 @@
+---
+- hosts: local
+  gather_facts: false
+  connection: local
+
+  roles:
+    - role: secrity_group
+      tags: secrity_group 
+        
+    - role: create_instances
+      tags: create_instances
